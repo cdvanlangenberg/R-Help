@@ -1,0 +1,8 @@
+# put commits to github when using ssh
+git init
+git add README.md
+git commit -m "first commit"
+
+
+git remote add origin https://github.com/{USER_NAME}/{REPOSITORY_NAME}.git
+git push --set-upstream origin master
