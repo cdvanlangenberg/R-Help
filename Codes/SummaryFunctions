@@ -1,0 +1,265 @@
+
+# prob robustness table -------------------------------------------------------------------------------------------
+
+
+
+mxp <- function(data, y = "y", p = 'p.90', amt = 'recamt', r = 10, prob = F ) {
+  
+  data$y = data[, y]
+  data$p = data[, p]
+  if (prob == T) {
+  data$pb <- xtile(data$p, 50)
+  data$pb <- cut(data$pb, breaks = c(0,20,35,40,43,45,46:50), labels = 1:10)
+  } else {data$pb <- xtile(data$p, r)}
+  
+  data$pb <- factor(data$pb)
+  
+  data$amt = data[, amt]
+  
+  m <- with(data, data.frame( n = tapply(p, pb, FUN = length)
+                              ,pmin = tapply(p, pb, FUN = min)
+                              ,pmax = tapply(p, pb, FUN = max)
+                              
+                              ,p = tapply(p, pb, FUN = mean)
+                              ,o = tapply(y, pb, FUN = mean)
+                              ,o1 = tapply(y, pb, FUN = sum)
+                              ,o2 = tapply(amt, pb, FUN = sum)
+  ))
+  
+  m <- na.omit(m)
+  
+  m$`%n` <- round(m$n/sum(m$n),2)
+  m$`%o1` <- round(m$o1/sum(m$o1),2)
+  m$`%o2` <- round(m$o2/sum(m$o2),2)
+  
+  m <- rbind(m, with(data, c(nrow(data), min(p, na.rm = T), max(p, na.rm = T),  mean(p, na.rm = T), mean(y), sum(y), sum(amt),1,1,1)))
+  m$n <- formatC(m$n, big.mark = ",", digits = 0,  format = "f")
+  m$pmin <- formatC(m$pmin, big.mark = ",", digits = 4,  format = "f")
+  m$pmax <- formatC(m$pmax, big.mark = ",", digits = 4,  format = "f")
+  
+  m$p <- formatC(m$p, big.mark = ",", digits = 4,  format = "f")
+  m$o <- formatC(m$o, big.mark = ",", digits = 4,  format = "f")
+  m$o1 <- formatC(m$o1, big.mark = ",", digits = 0,  format = "f")
+  m$o2 <- formatC(m$o2, big.mark = ",", digits = 0,  format = "f")
+  row.names(m)[nrow(m)] <- 'Total'
+  ;m
+  
+}
+
+
+# amount robustness table -------------------------------------------------------------------------------------------
+
+
+mxa <- function(data, y = "y", amt = "p.amt_180", cm = 'Claim_Amount', r = 10 ) {
+  data$y = data[, y]
+  data$Claim_Amount <- data[, cm]
+  data$p.amt = data[,amt]
+  data$pb.amt <- xtile(data$p.amt, r)
+  m <-  with(data, data.frame( n = tapply(p.amt[y == 1], pb.amt[y == 1], FUN = length)
+                               ,pmin = tapply(p.amt[y == 1], pb.amt[y == 1], FUN = min)
+                               ,pmax = tapply(p.amt[y == 1], pb.amt[y == 1], FUN = max)
+                               
+                               ,p = tapply(p.amt[y == 1], pb.amt[y == 1], FUN = mean)
+                               ,o = tapply(Claim_Amount[y == 1], pb.amt[y == 1], FUN = mean, na.rm  = T)
+                               ,o1 = tapply(y[y == 1], pb.amt[y == 1], FUN = sum, na.rm = T)
+                               ,p2 = tapply(p.amt[y == 1], pb.amt[y == 1], FUN = sum, na.rm = T)
+                               ,o2 = tapply(Claim_Amount[y == 1], pb.amt[y == 1], FUN = sum, na.rm = T)
+                               
+  ))
+  
+  m$`1%` <- round(m$n/sum(m$n, na.rm = T),2)
+  m$`%` <- round(m$o2/sum(m$o2, na.rm = T),2)
+  
+  m <- rbind(m, with(data, c(nrow(data), min(p.amt), max(p.amt),  mean(p.amt), mean(Claim_Amount), sum(y), sum(p.amt), sum(Claim_Amount), 1,1)))
+  
+  m$n <- formatC(m$n, big.mark = ",", digits = 0,  format = "f")
+  m$pmin <- formatC(m$pmin, big.mark = ",", digits = 0,  format = "f")
+  m$pmax <- formatC(m$pmax, big.mark = ",", digits = 0,  format = "f")
+  m$p <- formatC(m$p, big.mark = ",", digits = 0,  format = "f")
+  m$o <- formatC(m$o, big.mark = ",", digits = 0,  format = "f")
+  m$o1 <- formatC(m$o1, big.mark = ",", digits = 0,  format = "f")
+  m$o2 <- formatC(m$o2, big.mark = ",", digits = 0,  format = "f")
+  m$p2 <- formatC(m$p2, big.mark = ",", digits = 0,  format = "f")
+  ;m
+  
+}
+
+# expected robustness table -------------------------------------------------------------------------------------------
+
+mxe <- function(data, y = 'Exported30', cm = 'Claim_Amount', p.ev = "p.ev.30", r = 5, prob = F){
+  
+  data$y = data[, y]
+  data$p.ev = data[, p.ev]
+  data$Claim_Amount = data[, cm]
+  # data$pb = xtile(data$p.ev, r)
+  if (prob == T) {
+    data$pb <- xtile(data$p.ev, 50)
+    data$pb <- cut(data$pb, breaks = c(0,20,35,40,43,45,46:50), labels = 1:10)
+  } else {data$pb <- xtile(data$p.ev, r)}
+  
+  data$pb <- factor(data$pb)
+  
+  m <- with(data, data.frame( n = tapply(p.ev, pb, FUN = length)
+                              ,pmin = tapply(p.ev, pb, FUN = min)
+                              ,pmax = tapply(p.ev, pb, FUN = max)
+                              
+                              ,p = tapply(p.ev, pb, FUN = mean)
+                              ,o = tapply(Claim_Amount, pb, FUN = mean, na.rm = T)
+                              ,o1 = tapply(y, pb, FUN = sum, na.rm = T)
+                              ,p2 = tapply(p.ev, pb, FUN = sum, na.rm = T)
+                              ,o2 = tapply(Claim_Amount, pb, FUN = sum, na.rm = T)
+                              
+  ))
+  
+  m$`%1` <- round(m$n/sum(m$n),2)
+  m$`%2` <- round(m$o2/sum(m$o2),2)
+  
+  m <- rbind(m, with(data, c(nrow(data), min(p.ev, na.rm = T), max(p.ev, na.rm = T), mean(p.ev, na.rm = T), mean(Claim_Amount, na.rm = T), sum(y, na.rm = T), sum(p.ev), sum(Claim_Amount, na.rm = T), 1,1)))
+  
+  m$n <- formatC(m$n, big.mark = ",", digits = 0,  format = "f")
+  m$pmin <- formatC(m$pmin, big.mark = ",", digits = 2,  format = "f")
+  m$pmax <- formatC(m$pmax, big.mark = ",", digits = 2,  format = "f")
+  
+  m$p <- formatC(m$p, big.mark = ",", digits = 2,  format = "f")
+  m$o <- formatC(m$o, big.mark = ",", digits = 2,  format = "f")
+  m$o1 <- formatC(m$o1, big.mark = ",", digits = 0,  format = "f")
+  m$o2 <- formatC(m$o2, big.mark = ",", digits = 2,  format = "f")
+  m$p2 <- formatC(m$p2, big.mark = ",", digits = 2,  format = "f")
+  names(m) <- c('n','min','max', 'predavg','actualavg','rec', 'predtotal', 'actualtotal', '#%','$%')
+  row.names(m)[nrow(m)] <- 'Total'
+  ;m
+}
+
+
+# by metrics status roubustness table -----------------------------------------------------------------------------
+
+metrics_e <- function(data, ms = 'Metrics_Status', y = 'Exported90', p = 'p.90', a = 'amt',  cm = 'Claim_Amount',  prob = FALSE){
+  
+  data$y = data[, y]
+  data$cm = data[, cm] * data[, y]
+  data$p.ev = data[ ,p] * data[, a] 
+  
+  data$Metrics_Status = data[, ms]
+  
+  if (prob == TRUE) {
+    data$act <- data[, y]
+    data$p = data[, p]
+  } else{
+    data$act = data[, cm] * data[, y]
+    data$p = data$p.ev
+  }
+  
+  m <- with(data, data.frame( n = tapply(p.ev, Metrics_Status, FUN = length)
+                              ,p = tapply(p, Metrics_Status, FUN = mean, na.rm = T)
+                              ,o = tapply(act, Metrics_Status, FUN = mean, na.rm = T)
+                              ,o1 = tapply(y, Metrics_Status, FUN = sum, na.rm = T)
+                              ,p2 = tapply(p.ev, Metrics_Status, FUN = sum, na.rm = T)
+                              ,o2 = tapply(cm, Metrics_Status, FUN = sum, na.rm = T)
+                              
+  ))
+  
+  m$`%1` <- round(m$n/sum(m$n, na.rm = T),2)
+  m$`%2` <- round(m$o2/sum(m$o2, na.rm = T),2)
+  
+  m <- m[order(-m$n), ]
+  
+  m <- rbind(m, with(data, c(nrow(data), mean(p, na.rm = T), mean(act, na.rm = T), sum(y, na.rm = T), sum(p.ev, na.rm = T), sum(cm, na.rm = T), 1,1)))
+  
+  m$n <- formatC(m$n, big.mark = ",", digits = 0,  format = "f")
+  m$p <- formatC(m$p, big.mark = ",", digits = 4,  format = "f")
+  m$o <- formatC(m$o, big.mark = ",", digits = 4,  format = "f")
+  m$o1 <- formatC(m$o1, big.mark = ",", digits = 0,  format = "f")
+  m$o2 <- formatC(m$o2, big.mark = ",", digits = 2,  format = "f")
+  m$p2 <- formatC(m$p2, big.mark = ",", digits = 2,  format = "f")
+  names(m) <- c('n','predavg','actualavg','exp/rec', 'predtotal', 'actualtotal', '#%','$%')
+  row.names(m)[length(levels(as.factor(data[, 'Metrics_Status']))) + 1] <- 'Total'
+  ;m
+}
+
+
+
+# by metrics status roubustness table recovery -------------------------------------------------------------------------
+
+
+metrics_sr <- function(data, ms = 'Metrics_Status', y = 'Exported180', p.ev = "pred", prob = FALSE){
+  
+  data$y = data[, y]
+  data$p.ev = data[, p.ev]
+  data$Metrics_Status = data[, ms]
+  
+  if (prob == TRUE) {
+    data[, "amt"] <- data[, y]
+    data$p.ev = data[, p.ev]
+  }else{data[, "amt"] <- data[, "DetailAmount"] #* data[, y]
+  # data$p.ev = data[, p.ev] * data[, "DetailAmount"] 
+  }
+  
+  
+  
+  m <- with(data, data.frame( n = tapply(p.ev, Metrics_Status, FUN = length)
+                              ,p = tapply(p.ev, Metrics_Status, FUN = mean)
+                              ,o = tapply(amt, Metrics_Status, FUN = mean)
+                              ,o1 = tapply(y, Metrics_Status, FUN = sum)
+                              ,p2 = tapply(p.ev, Metrics_Status, FUN = sum)
+                              ,o2 = tapply(amt, Metrics_Status, FUN = sum)
+                              
+  ))
+  
+  m$`%1` <- round(m$n/sum(m$n, na.rm = T),2)
+  m$`%2` <- round(m$o2/sum(m$o2, na.rm = T),2)
+
+  m <- m[order(-m$n), ]
+
+  m <- rbind(m, with(data, c(nrow(data), mean(p.ev, na.rm = T), mean(amt, na.rm = T), sum(y), sum(p.ev, na.rm = T), sum(amt[y == 1], na.rm = T), 1,1)))
+
+  m$n <- formatC(m$n, big.mark = ",", digits = 0,  format = "f")
+  m$p <- formatC(m$p, big.mark = ",", digits = 4,  format = "f")
+  m$o <- formatC(m$o, big.mark = ",", digits = 4,  format = "f")
+  m$o1 <- formatC(m$o1, big.mark = ",", digits = 0,  format = "f")
+  m$p2 <- formatC(m$p2, big.mark = ",", digits = 0,  format = "f")
+  m$o2 <- formatC(m$o2, big.mark = ",", digits = 0,  format = "f")
+  names(m) <- c('n','predavg','actualavg','rec','predrec', 'totalrec', '#%','$%')
+  row.names(m)[length(levels(data[, 'Metrics_Status'])) + 1] <- 'Total'
+  ;m
+}
+
+
+
+
+# check response rate by variable-------------------------------------------------------------------------
+fn <- function(data = data, x, y, r = 5, prob = F) {
+  
+  d <- quo(x) 
+  
+  data[, paste0('var')] <- data[, x]
+  data[, paste0('y')] <- data[, y]
+  
+  # data[, paste0('Custom_Group')] <- xtile(data[, x], r)
+  
+  if (prob == T) {
+    data[, paste0('Custom_Group')] <- xtile(data[, x], 20)
+    data[, paste0('Custom_Group')] <- cut(data[, paste0('Custom_Group')], breaks = c(0,6,8,10,12,14,16:20), labels = 1:10)
+  } else {data[, paste0('Custom_Group')] <- xtile(data[, x], r)}
+  
+  data1 <- data %>% group_by(Custom_Group) %>% summarise((!!d), n = n(), min = min(var), max = max(var), rec = sum(y), recrate = mean(y))
+  data1 <- as.data.frame(data1)
+  ;data1
+
+}
+
+
+fn2 <- function(data = data, y = y ){
+  
+  lvar <- vector(mode="list", length=sum(sapply(data, function(x) !is.factor(x))))
+  lvar <- lapply(X = names(data)[sapply(data, function(x) !is.factor(x))], FUN = function(x) fn(data = data, x = x, y = y, r = 5))
+  names(lvar) <- names(data)[sapply(data, function(x) !is.factor(x))]
+  ;lvar
+}
+
+
+
+# lvs <- fn2(data = data11, y = 'Recovered')
+# capture.output(print(lvs), file = "Results/Univariate.txt" )
+
+
+
